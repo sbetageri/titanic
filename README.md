@@ -7,7 +7,7 @@
     * numpy
     * pandas
     * scikit-learn
-* Pycharm
+* VSCode
 
 ### Platform:
 * macOS Sierra 10.12.3
