@@ -9,35 +9,60 @@
 
 import pandas as pd
 import numpy as np
+from sklearn import tree
+from sklearn import preprocessing
 
-
-def print_stats(array, name_array):
-    mean = np.mean(array)
-    median = np.median(array)
-    var = np.var(array)
-    std_deviation = np.std(array)
-
-    print("**********************************************************************")
-    print("{}".format(name_array))
-    print("Mean for {} is {}".format(name_array, mean))
-    print("Median for {} is {}".format(name_array, median))
-    print("Var for {} is {}".format(name_array, var))
-    print("Standard Deviation for {} is {}".format(name_array, std_deviation))
-    print("**********************************************************************")
 
 dataframe = pd.read_csv('../dataset/train.csv')
 
-survival = np.array(dataframe['Survived'])
-pclass = np.array(dataframe['Pclass'])
-age = np.array(dataframe['Age'])
-sibsp = np.array(dataframe['SibSp'])
-parch = np.array(dataframe['Parch'])
-fare = np.array(dataframe['Fare'])
-embarked = np.array(dataframe['Embarked'])
+label_encoder = preprocessing.LabelEncoder()
+dataframe['Sex'] = label_encoder.fit_transform(dataframe['Sex'])
 
-print_stats(survival, 'Survival')
-print_stats(pclass, 'Class')
-print_stats(age, 'Age')
-print_stats(sibsp, 'Siblings and spouse')
-print_stats(parch, 'Parents and children')
-print_stats(fare, 'Fare')
+dataframe = dataframe.drop('Cabin', axis=1)
+dataframe = dataframe.drop('Embarked', axis=1)
+dataframe = dataframe.drop('Ticket', axis=1)
+dataframe = dataframe.drop('Name', axis=1)
+
+for i in dataframe.columns:
+    mean = np.mean(dataframe[i])
+    dataframe[i] = dataframe[i].fillna(mean)
+
+label = dataframe['Survived']
+features = dataframe.drop('Survived', axis=1)
+
+clf = tree.DecisionTreeClassifier(splitter='random', random_state=9, max_depth=4)
+clf.fit(features, label)
+
+test_df = pd.read_csv('../dataset/test.csv').drop('Cabin', axis=1)
+test_df = test_df.drop('Embarked', axis=1)
+test_df = test_df.drop('Ticket', axis=1)
+test_df = test_df.drop('Name', axis=1)
+
+
+label_encoder = preprocessing.LabelEncoder()
+test_df['Sex'] = label_encoder.fit_transform(test_df['Sex'])
+
+for i in test_df.columns:
+    mean = np.mean(test_df[i])
+    test_df[i] = test_df[i].fillna(mean)
+
+d = clf.predict(test_df)
+
+survived = pd.read_csv('../gender_submission.csv')['Survived']
+
+count = 0
+
+actuals = {
+    "PassengerId": test_df['PassengerId'],
+    "Survived":d
+}
+
+act = survived
+print(act)
+for i in range(len(d)):
+    if d[i] == act[i]:
+        count += 1
+print(count)
+
+predicted = pd.DataFrame(actuals)
+predicted.to_csv('../predicted.csv', index=False)
